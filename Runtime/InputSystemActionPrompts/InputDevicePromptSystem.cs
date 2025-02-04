@@ -28,6 +28,7 @@ namespace InputSystemActionPrompts
         public string BindingPath;
         public bool IsComposite;
         public bool IsPartOfComposite;
+        public string CompositeName;
     }
     
     public static class InputDevicePromptSystem
@@ -300,29 +301,36 @@ namespace InputSystemActionPrompts
 
             var validEntries = new List<ActionBindingPromptEntry>();
             var actionBindings=s_ActionBindingMap[lowerCaseTag];
-            
+
+            ActionBindingPromptEntry matchingPrompt = null;
+
             foreach (var actionBinding in actionBindings)
             {
                 //Debug.Log($"Checking binding '{actionBinding}' on device {validDevice.name}");
                 var usage = GetUsageFromBindingPath(actionBinding.BindingPath);
-                if (string.IsNullOrEmpty(usage))
+
+                if (actionBinding.IsComposite)
                 {
-                    var matchingPrompt = validDevice.ActionBindingPromptEntries.FirstOrDefault((prompt) =>
+                    var compositeName = actionBinding.CompositeName;
+
+                    matchingPrompt = validDevice.ActionBindingPromptEntries.FirstOrDefault((prompt) =>
+                        String.Equals(prompt.ActionBindingPath, compositeName,
+                            StringComparison.CurrentCultureIgnoreCase));
+                }
+                if (matchingPrompt == null && string.IsNullOrEmpty(usage))
+                {
+
+                     matchingPrompt = validDevice.ActionBindingPromptEntries.FirstOrDefault((prompt) =>
                         String.Equals(prompt.ActionBindingPath, actionBinding.BindingPath,
                             StringComparison.CurrentCultureIgnoreCase));
-                    if (matchingPrompt != null)
-                    {
-                        //Debug.Log($"Found matching prompt {matchingPrompt.ActionBindingPath} for {inputTag}");
-                        validEntries.Add(matchingPrompt);
-                    }
+
                 }
-                else
+                else if (matchingPrompt == null)
                 {
                     // This is a usage, eg "Submit" or "Cancel", in the format "*/{Submit}"
                     
                     // Its possible in some control schemes (eg mouse keyboard) that active device
                     // Doesnt have a given usage (eg submit), so will want to find an alternative
-
                     var matchingUsageFound = false;
                     var deviceList = new List<InputDevice>(InputSystem.devices);
                     // Move active device to front of queue
@@ -339,18 +347,22 @@ namespace InputSystemActionPrompts
                                 if (controlUsage.ToLower() == usage.ToLower())
                                 {
                                     // Match! Search for prompt entry with same extension (ignore first part eg "gamepad")
-                                    var matchingPrompt = validDevice.ActionBindingPromptEntries.FirstOrDefault((prompt) =>
+                                    matchingPrompt = validDevice.ActionBindingPromptEntries.FirstOrDefault((prompt) =>
                                         String.Equals(prompt.ActionBindingPath.Split('/').Last(), control.name,
                                             StringComparison.CurrentCultureIgnoreCase));
                                     if (matchingPrompt != null)
                                     {
-                                        validEntries.Add(matchingPrompt);
                                         matchingUsageFound = true;
                                     }
                                 }
                             }
                         }
                     }
+                }
+
+                if (matchingPrompt != null)
+                {
+                    validEntries.Add(matchingPrompt);
                 }
             }
 
@@ -446,8 +458,10 @@ namespace InputSystemActionPrompts
                         {
                             BindingPath = binding.effectivePath,
                             IsComposite = binding.isComposite,
-                            IsPartOfComposite = binding.isPartOfComposite
+                            IsPartOfComposite = binding.isPartOfComposite,
+                            CompositeName = binding.name,
                         };
+
                         if (s_ActionBindingMap.TryGetValue(bindingPathLower, out var value))
                         {
                             value.Add(entry);

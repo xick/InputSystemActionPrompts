@@ -179,3 +179,8 @@ MonoBehaviour:
     PromptSprite: {fileID: -1815695679, guid: b5c1abc09a9f699429c809896b58df72, type: 3}
   - ActionBindingPath: 
     PromptSprite: {fileID: -533230085, guid: b5c1abc09a9f699429c809896b58df72, type: 3}
+  - ActionBindingPath: WASD
+    PromptSprite: {fileID: 1369760213, guid: b5c1abc09a9f699429c809896b58df72, type: 3}
+  - ActionBindingPath: ARROWS
+    PromptSprite: {fileID: 609533083, guid: b5c1abc09a9f699429c809896b58df72, type: 3}
+  DeviceSpriteEntries: []
